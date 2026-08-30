@@ -5,7 +5,7 @@
 
 // URL Firebase ของคุณ
 const FIREBASE_URL =
-  "https://smart-parking-iot-6467d-default-rtdb.asia-southeast1.firebasedatabase.app/parking.json";
+  "https://smart-parking-iot-6467d-default-rtdb.asia-southeast1.firebasedatabase.app";
 
 
 // ============================================
