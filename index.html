@@ -3,299 +3,141 @@
 
 <head>
   <meta charset="UTF-8">
-
-  <meta name="viewport"
-        content="width=device-width, initial-scale=1.0">
-
-  <meta name="theme-color"
-        content="#0f172a">
-
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0f172a">
   <title>Smart Parking IoT</title>
-
   <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
   <header class="header">
-
     <div>
       <h1>🚗 Smart Parking</h1>
       <p>ระบบลานจอดรถอัจฉริยะ IoT</p>
     </div>
 
-    <div id="connectionStatus"
-         class="connection offline">
+    <div id="connectionStatus" class="connection offline">
       ● OFFLINE
     </div>
-
   </header>
-
 
   <main class="container">
 
-    <!-- Summary -->
-
+    <!-- Summary Section -->
     <section class="summary">
-
       <div class="summary-card">
         <div class="summary-icon">🅿️</div>
-
         <div>
-          <div class="summary-title">
-            ช่องทั้งหมด
-          </div>
-
-          <div id="totalSlots"
-               class="summary-number">
-            4
-          </div>
+          <div class="summary-title">ช่องทั้งหมด</div>
+          <div id="totalSlots" class="summary-number">4</div>
         </div>
       </div>
-
 
       <div class="summary-card free-summary">
-
         <div class="summary-icon">🟢</div>
-
         <div>
-          <div class="summary-title">
-            ช่องว่าง
-          </div>
-
-          <div id="freeSlots"
-               class="summary-number">
-            -
-          </div>
+          <div class="summary-title">ช่องว่าง</div>
+          <div id="freeSlots" class="summary-number">-</div>
         </div>
-
       </div>
-
 
       <div class="summary-card occupied-summary">
-
         <div class="summary-icon">🔴</div>
-
         <div>
-          <div class="summary-title">
-            มีรถ
-          </div>
-
-          <div id="occupiedSlots"
-               class="summary-number">
-            -
-          </div>
+          <div class="summary-title">มีรถ</div>
+          <div id="occupiedSlots" class="summary-number">-</div>
         </div>
-
       </div>
-
     </section>
 
-
-    <!-- Parking -->
-
+    <!-- Parking Slots Section -->
     <section>
-
       <div class="section-title">
-
         <div>
           <h2>ช่องจอดรถ</h2>
           <p>สถานะแบบ Real-time</p>
         </div>
-
-        <div id="lastUpdate"
-             class="last-update">
-          รอข้อมูล...
-        </div>
-
+        <div id="lastUpdate" class="last-update">รอข้อมูล...</div>
       </div>
-
 
       <div class="parking-grid">
-
-
-        <!-- A1 -->
-
-        <div id="slot-A1"
-             class="parking-slot">
-
+        <!-- Slot A1 -->
+        <div id="slot-A1" class="parking-slot">
           <div class="slot-header">
-
-            <span class="slot-name">
-              A1
-            </span>
-
+            <span class="slot-name">A1</span>
             <span class="slot-dot"></span>
-
           </div>
-
-          <div class="car-icon">
-            🚗
-          </div>
-
-          <div class="slot-status">
-            กำลังโหลด...
-          </div>
-
-          <div class="sensor-status">
-            IR Sensor A1
-          </div>
-
+          <div class="car-icon">🚗</div>
+          <div class="slot-status">กำลังโหลด...</div>
+          <div class="sensor-status">IR Sensor A1</div>
         </div>
 
-
-        <!-- A2 -->
-
-        <div id="slot-A2"
-             class="parking-slot">
-
+        <!-- Slot A2 -->
+        <div id="slot-A2" class="parking-slot">
           <div class="slot-header">
-
-            <span class="slot-name">
-              A2
-            </span>
-
+            <span class="slot-name">A2</span>
             <span class="slot-dot"></span>
-
           </div>
-
-          <div class="car-icon">
-            🚗
-          </div>
-
-          <div class="slot-status">
-            กำลังโหลด...
-          </div>
-
-          <div class="sensor-status">
-            IR Sensor A2
-          </div>
-
+          <div class="car-icon">🚗</div>
+          <div class="slot-status">กำลังโหลด...</div>
+          <div class="sensor-status">IR Sensor A2</div>
         </div>
 
-
-        <!-- A3 -->
-
-        <div id="slot-A3"
-             class="parking-slot">
-
+        <!-- Slot A3 -->
+        <div id="slot-A3" class="parking-slot">
           <div class="slot-header">
-
-            <span class="slot-name">
-              A3
-            </span>
-
+            <span class="slot-name">A3</span>
             <span class="slot-dot"></span>
-
           </div>
-
-          <div class="car-icon">
-            🚗
-          </div>
-
-          <div class="slot-status">
-            กำลังโหลด...
-          </div>
-
-          <div class="sensor-status">
-            IR Sensor A3
-          </div>
-
+          <div class="car-icon">🚗</div>
+          <div class="slot-status">กำลังโหลด...</div>
+          <div class="sensor-status">IR Sensor A3</div>
         </div>
 
-
-        <!-- A4 -->
-
-        <div id="slot-A4"
-             class="parking-slot">
-
+        <!-- Slot A4 -->
+        <div id="slot-A4" class="parking-slot">
           <div class="slot-header">
-
-            <span class="slot-name">
-              A4
-            </span>
-
+            <span class="slot-name">A4</span>
             <span class="slot-dot"></span>
-
           </div>
-
-          <div class="car-icon">
-            🚗
-          </div>
-
-          <div class="slot-status">
-            กำลังโหลด...
-          </div>
-
-          <div class="sensor-status">
-            IR Sensor A4
-          </div>
-
+          <div class="car-icon">🚗</div>
+          <div class="slot-status">กำลังโหลด...</div>
+          <div class="sensor-status">IR Sensor A4</div>
         </div>
-
       </div>
-
     </section>
 
-
-    <!-- System -->
-
+    <!-- System Status Section -->
     <section class="system-card">
-
       <h2>📡 สถานะระบบ</h2>
-
       <div class="system-grid">
-
         <div>
           <span>ESP8266</span>
-          <strong id="espStatus">
-            -
-          </strong>
+          <strong id="espStatus">-</strong>
         </div>
-
         <div>
           <span>Firebase</span>
-          <strong id="firebaseStatus">
-            -
-          </strong>
+          <strong id="firebaseStatus">-</strong>
         </div>
-
         <div>
           <span>จำนวนช่อง</span>
-          <strong id="systemTotal">
-            4
-          </strong>
+          <strong id="systemTotal">4</strong>
         </div>
-
         <div>
           <span>อัปเดตล่าสุด</span>
-          <strong id="systemTime">
-            -
-          </strong>
+          <strong id="systemTime">-</strong>
         </div>
-
       </div>
-
     </section>
 
-
     <footer>
-
-      <p>
-        Smart Parking IoT
-        • ESP8266 + Firebase
-      </p>
-
+      <p>Smart Parking IoT • ESP8266 + Firebase</p>
     </footer>
 
   </main>
 
-
-  <!-- Firebase -->
-
   <script src="app.js"></script>
-
 </body>
 
 </html>
-
