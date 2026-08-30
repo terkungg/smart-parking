@@ -3,420 +3,212 @@
 // Firebase Realtime Database REST API
 // ============================================
 
-// URL Firebase ของคุณ
+// URL Firebase (ปรับ Path เป็น /.json เพื่อดึงข้อมูลตรงจาก Root)
 const FIREBASE_URL =
-  "https://smart-parking-iot-6467d-default-rtdb.asia-southeast1.firebasedatabase.app";
+  "https://smart-parking-iot-6467d-default-rtdb.asia-southeast1.firebasedatabase.app/parking";
+
+// ระยะเวลา Timeout ของ ESP8266 (ถ้าส่งข้อมูลช้าเกิน 10 วินาที จะถือว่า Offline)
+const ESP_TIMEOUT_MS = 10000;
 
 
 // ============================================
-// เริ่มต้น
+// เริ่มต้นระบบ (Poller แบบ ป้องกัน Request ชนกัน)
 // ============================================
 
 document.addEventListener("DOMContentLoaded", () => {
-
   console.log("Smart Parking Dashboard เริ่มทำงาน");
-
-  loadParkingData();
-
-  // อัปเดตทุก 2 วินาที
-  setInterval(loadParkingData, 2000);
-
+  startPolling();
 });
+
+async function startPolling() {
+  await loadParkingData();
+  // ใช้ setTimeout แทน setInterval เพื่อป้องกันการเกิด Request ค้างสะสม
+  setTimeout(startPolling, 2000);
+}
 
 
 // ============================================
-// อ่านข้อมูล Firebase
+// อ่านข้อมูลจาก Firebase
 // ============================================
 
 async function loadParkingData() {
-
   try {
-
+    // 🛠️ FIX 1: แก้ไข URL ดึงค่าจาก Root (/.json) แทน /parking.json
     const response = await fetch(
-      FIREBASE_URL + "/parking.json?nocache=" + Date.now()
+      `${FIREBASE_URL}/.json?nocache=${Date.now()}`
     );
-
 
     if (!response.ok) {
-
-      throw new Error(
-        "HTTP Error " + response.status
-      );
-
+      throw new Error("HTTP Error " + response.status);
     }
 
+    const data = await response.json();
 
-    const data =
-      await response.json();
-
-
-    console.log(
-      "Firebase Data:",
-      data
-    );
-
+    console.log("Firebase Data:", data);
 
     if (!data) {
-
-      console.log(
-        "ยังไม่มีข้อมูล Parking"
-      );
-
+      console.log("ยังไม่มีข้อมูลใน Firebase");
       setOffline();
-
       return;
-
     }
-
 
     // ========================================
     // อัปเดตช่อง A1-A4
     // ========================================
-
-    updateSlot(
-      "A1",
-      data.A1?.occupied === true
-    );
-
-
-    updateSlot(
-      "A2",
-      data.A2?.occupied === true
-    );
-
-
-    updateSlot(
-      "A3",
-      data.A3?.occupied === true
-    );
-
-
-    updateSlot(
-      "A4",
-      data.A4?.occupied === true
-    );
-
+    updateSlot("A1", data.A1?.occupied === true);
+    updateSlot("A2", data.A2?.occupied === true);
+    updateSlot("A3", data.A3?.occupied === true);
+    updateSlot("A4", data.A4?.occupied === true);
 
     // ========================================
-    // จำนวนช่อง
+    // คำนวณจำนวนช่องจอด
     // ========================================
+    const total = Number(data.totalSlots || 4);
+    const occupied = [
+      data.A1?.occupied,
+      data.A2?.occupied,
+      data.A3?.occupied,
+      data.A4?.occupied,
+    ].filter((value) => value === true).length;
 
-    const total =
-      Number(data.totalSlots || 4);
+    const free = total - occupied;
 
-
-    const occupied =
-      [
-        data.A1?.occupied,
-        data.A2?.occupied,
-        data.A3?.occupied,
-        data.A4?.occupied
-      ]
-      .filter(value => value === true)
-      .length;
-
-
-    const free =
-      total - occupied;
-
-
-    setText(
-      "totalSlots",
-      total
-    );
-
-
-    setText(
-      "systemTotal",
-      total
-    );
-
-
-    setText(
-      "occupiedSlots",
-      occupied
-    );
-
-
-    setText(
-      "freeSlots",
-      free
-    );
-
+    setText("totalSlots", total);
+    setText("systemTotal", total);
+    setText("occupiedSlots", occupied);
+    setText("freeSlots", free);
 
     // ========================================
-    // ESP8266 Status
+    // เช็คสถานะ ESP8266 (พร้อมระบบ Heartbeat/Timeout)
     // ========================================
+    let espOnline = data.online === true;
 
-    const espOnline =
-      data.online === true;
+    // 🛠️ FIX 2: เช็ค timestamp ล่าสุด ถ้าส่งมาเกิน 10 วินาที จะถือว่าเน็ตหลุด/ดับ
+    if (data.lastSeen) {
+      const isHeartbeatActive = Date.now() - data.lastSeen < ESP_TIMEOUT_MS;
+      espOnline = espOnline && isHeartbeatActive;
+    }
 
-
-    const espStatus =
-      document.getElementById(
-        "espStatus"
-      );
-
-
+    const espStatus = document.getElementById("espStatus");
     if (espStatus) {
-
       if (espOnline) {
-
-        espStatus.textContent =
-          "ONLINE";
-
-        espStatus.style.color =
-          "#16a34a";
-
+        espStatus.textContent = "ONLINE";
+        espStatus.style.color = "#16a34a";
+      } else {
+        espStatus.textContent = "OFFLINE";
+        espStatus.style.color = "#dc2626";
       }
-      else {
-
-        espStatus.textContent =
-          "OFFLINE";
-
-        espStatus.style.color =
-          "#dc2626";
-
-      }
-
     }
 
-
     // ========================================
-    // Firebase Status
+    // สถานะ Firebase (เชื่อมต่อสำเร็จ)
     // ========================================
-
-    const firebaseStatus =
-      document.getElementById(
-        "firebaseStatus"
-      );
-
-
+    const firebaseStatus = document.getElementById("firebaseStatus");
     if (firebaseStatus) {
-
-      firebaseStatus.textContent =
-        "ONLINE";
-
-      firebaseStatus.style.color =
-        "#16a34a";
-
+      firebaseStatus.textContent = "ONLINE";
+      firebaseStatus.style.color = "#16a34a";
     }
 
-
     // ========================================
-    // Connection Status
+    // แถบสถานะระบบหลัก (Header Status)
     // ========================================
-
-    const connection =
-      document.getElementById(
-        "connectionStatus"
-      );
-
-
+    const connection = document.getElementById("connectionStatus");
     if (connection) {
-
-      connection.textContent =
-        "● ONLINE";
-
-      connection.className =
-        "connection online";
-
+      connection.textContent = espOnline ? "● ONLINE" : "● DEVICE OFFLINE";
+      connection.className = espOnline ? "connection online" : "connection offline";
     }
 
-
     // ========================================
-    // เวลา
+    // อัปเดตเวลาล่าสุด
     // ========================================
-
     updateTime();
 
-
-  }
-  catch (error) {
-
-    console.error(
-      "Firebase Error:",
-      error
-    );
-
-
+  } catch (error) {
+    console.error("Firebase Fetch Error:", error);
     setOffline();
-
   }
-
 }
 
 
 // ============================================
-// อัปเดตช่องจอด
+// อัปเดตการแสดงผลช่องจอด
 // ============================================
 
-function updateSlot(
-  name,
-  occupied
-) {
-
-  const card =
-    document.getElementById(
-      "slot-" + name
-    );
-
+function updateSlot(name, occupied) {
+  const card = document.getElementById("slot-" + name);
 
   if (!card) {
-
-    console.error(
-      "ไม่พบช่อง:",
-      name
-    );
-
+    console.error("ไม่พบช่องจอด:", name);
     return;
-
   }
 
-
-  const status =
-    card.querySelector(
-      ".slot-status"
-    );
-
+  const status = card.querySelector(".slot-status");
 
   if (occupied) {
-
-    card.classList.remove(
-      "free"
-    );
-
-    card.classList.add(
-      "occupied"
-    );
-
-
+    card.classList.remove("free");
+    card.classList.add("occupied");
     if (status) {
-
-      status.textContent =
-        "🔴 มีรถ";
-
+      status.textContent = "🔴 มีรถ";
     }
-
-  }
-  else {
-
-    card.classList.remove(
-      "occupied"
-    );
-
-    card.classList.add(
-      "free"
-    );
-
-
+  } else {
+    card.classList.remove("occupied");
+    card.classList.add("free");
     if (status) {
-
-      status.textContent =
-        "🟢 ว่าง";
-
+      status.textContent = "🟢 ว่าง";
     }
-
   }
-
 }
 
 
 // ============================================
-// Offline
+// จัดการสถานะเมื่อเชื่อมต่อไม่ได้ (Offline)
 // ============================================
 
 function setOffline() {
-
-  const connection =
-    document.getElementById(
-      "connectionStatus"
-    );
-
-
+  const connection = document.getElementById("connectionStatus");
   if (connection) {
-
-    connection.textContent =
-      "● OFFLINE";
-
-    connection.className =
-      "connection offline";
-
+    connection.textContent = "● OFFLINE";
+    connection.className = "connection offline";
   }
 
-
-  const firebaseStatus =
-    document.getElementById(
-      "firebaseStatus"
-    );
-
-
+  const firebaseStatus = document.getElementById("firebaseStatus");
   if (firebaseStatus) {
-
-    firebaseStatus.textContent =
-      "OFFLINE";
-
-    firebaseStatus.style.color =
-      "#dc2626";
-
+    firebaseStatus.textContent = "OFFLINE";
+    firebaseStatus.style.color = "#dc2626";
   }
 
+  const espStatus = document.getElementById("espStatus");
+  if (espStatus) {
+    espStatus.textContent = "OFFLINE";
+    espStatus.style.color = "#dc2626";
+  }
 }
 
 
 // ============================================
-// อัปเดตข้อความ
+// ฟังก์ชันช่วยอัปเดตข้อความใน HTML
 // ============================================
 
-function setText(
-  id,
-  value
-) {
-
-  const element =
-    document.getElementById(id);
-
-
+function setText(id, value) {
+  const element = document.getElementById(id);
   if (element) {
-
-    element.textContent =
-      value;
-
+    element.textContent = value;
   }
-
 }
 
 
 // ============================================
-// เวลา
+// อัปเดตเวลาแสดงผล
 // ============================================
 
 function updateTime() {
+  const now = new Date();
+  const time = now.toLocaleTimeString("th-TH", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
 
-  const now =
-    new Date();
-
-
-  const time =
-    now.toLocaleTimeString(
-      "th-TH",
-      {
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit"
-      }
-    );
-
-
-  setText(
-    "lastUpdate",
-    "อัปเดตล่าสุด " + time
-  );
-
-
-  setText(
-    "systemTime",
-    time
-  );
-
+  setText("lastUpdate", "อัปเดตล่าสุด " + time);
+  setText("systemTime", time);
 }
