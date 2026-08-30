@@ -1,146 +1,77 @@
-// =====================================================
-// Firebase SDK
-// =====================================================
+// ============================================
+// SMART PARKING DASHBOARD
+// Firebase Realtime Database REST API
+// ============================================
 
-import {
-  initializeApp
-} from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
-
-
-import {
-  getDatabase,
-  ref,
-  onValue,
-  onDisconnect,
-  set,
-  serverTimestamp
-} from "https://www.gstatic.com/firebasejs/12.18.0/firebase-database.js";
-
-// Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
-
-// Your web app's Firebase configuration
-const firebaseConfig = {
-  apiKey: "AIzaSyAnqD07-p3YMubsS62QVQJbuL1lWTrG6e0",
-  authDomain: "smart-parking-iot-6467d.firebaseapp.com",
-  databaseURL: "https://smart-parking-iot-6467d-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "smart-parking-iot-6467d",
-  storageBucket: "smart-parking-iot-6467d.firebasestorage.app",
-  messagingSenderId: "1091121278576",
-  appId: "1:1091121278576:web:11e160f0ad037346a10eb5"
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+// URL Firebase ของคุณ
+const FIREBASE_URL =
+  "https://smart-parking-iot-6467d-default-rtdb.asia-southeast1.firebasedatabase.app/parking.json";
 
 
-// =====================================================
-// Firebase Initialize
-// =====================================================
+// ============================================
+// เริ่มต้น
+// ============================================
 
-const app =
-  initializeApp(firebaseConfig);
+document.addEventListener("DOMContentLoaded", () => {
 
+  console.log("Smart Parking Dashboard เริ่มทำงาน");
 
-const db =
-  getDatabase(app);
+  loadParkingData();
 
+  // อัปเดตทุก 2 วินาที
+  setInterval(loadParkingData, 2000);
 
-// =====================================================
-// References
-// =====================================================
-
-const parkingRef =
-  ref(db, "parking");
+});
 
 
-// =====================================================
-// Connection Monitor
-// =====================================================
+// ============================================
+// อ่านข้อมูล Firebase
+// ============================================
 
-const connectedRef =
-  ref(db, ".info/connected");
+async function loadParkingData() {
 
+  try {
 
-onValue(
-  connectedRef,
-  (snapshot) => {
-
-    const connected =
-      snapshot.val() === true;
+    const response = await fetch(
+      FIREBASE_URL + "/parking.json?nocache=" + Date.now()
+    );
 
 
-    const status =
-      document.getElementById(
-        "connectionStatus"
+    if (!response.ok) {
+
+      throw new Error(
+        "HTTP Error " + response.status
       );
-
-
-    const firebaseStatus =
-      document.getElementById(
-        "firebaseStatus"
-      );
-
-
-    if (connected) {
-
-      status.textContent =
-        "● ONLINE";
-
-      status.className =
-        "connection online";
-
-      firebaseStatus.textContent =
-        "ONLINE";
-
-    }
-    else {
-
-      status.textContent =
-        "● OFFLINE";
-
-      status.className =
-        "connection offline";
-
-      firebaseStatus.textContent =
-        "OFFLINE";
 
     }
 
-  }
-);
-
-
-// =====================================================
-// อ่านข้อมูล Parking แบบ Real-time
-// =====================================================
-
-onValue(
-
-  parkingRef,
-
-  (snapshot) => {
 
     const data =
-      snapshot.val();
+      await response.json();
+
+
+    console.log(
+      "Firebase Data:",
+      data
+    );
 
 
     if (!data) {
 
       console.log(
-        "ยังไม่มีข้อมูลจาก ESP8266"
+        "ยังไม่มีข้อมูล Parking"
       );
+
+      setOffline();
 
       return;
 
     }
 
 
-    // -------------------------------------------------
-    // A1
-    // -------------------------------------------------
+    // ========================================
+    // อัปเดตช่อง A1-A4
+    // ========================================
 
     updateSlot(
       "A1",
@@ -148,19 +79,11 @@ onValue(
     );
 
 
-    // -------------------------------------------------
-    // A2
-    // -------------------------------------------------
-
     updateSlot(
       "A2",
       data.A2?.occupied === true
     );
 
-
-    // -------------------------------------------------
-    // A3
-    // -------------------------------------------------
 
     updateSlot(
       "A3",
@@ -168,74 +91,62 @@ onValue(
     );
 
 
-    // -------------------------------------------------
-    // A4
-    // -------------------------------------------------
-
     updateSlot(
       "A4",
       data.A4?.occupied === true
     );
 
 
-    // -------------------------------------------------
-    // Total
-    // -------------------------------------------------
+    // ========================================
+    // จำนวนช่อง
+    // ========================================
 
     const total =
       Number(data.totalSlots || 4);
 
 
-    document.getElementById(
-      "totalSlots"
-    ).textContent = total;
-
-
-    document.getElementById(
-      "systemTotal"
-    ).textContent = total;
-
-
-    // -------------------------------------------------
-    // Count
-    // -------------------------------------------------
-
-    const slots = [
-
-      data.A1?.occupied === true,
-
-      data.A2?.occupied === true,
-
-      data.A3?.occupied === true,
-
-      data.A4?.occupied === true
-
-    ];
-
-
     const occupied =
-      slots.filter(Boolean).length;
+      [
+        data.A1?.occupied,
+        data.A2?.occupied,
+        data.A3?.occupied,
+        data.A4?.occupied
+      ]
+      .filter(value => value === true)
+      .length;
 
 
     const free =
       total - occupied;
 
 
-    document.getElementById(
-      "occupiedSlots"
-    ).textContent =
-      occupied;
+    setText(
+      "totalSlots",
+      total
+    );
 
 
-    document.getElementById(
-      "freeSlots"
-    ).textContent =
-      free;
+    setText(
+      "systemTotal",
+      total
+    );
 
 
-    // -------------------------------------------------
-    // ESP Status
-    // -------------------------------------------------
+    setText(
+      "occupiedSlots",
+      occupied
+    );
+
+
+    setText(
+      "freeSlots",
+      free
+    );
+
+
+    // ========================================
+    // ESP8266 Status
+    // ========================================
 
     const espOnline =
       data.online === true;
@@ -247,54 +158,98 @@ onValue(
       );
 
 
-    if (espOnline) {
+    if (espStatus) {
 
-      espStatus.textContent =
+      if (espOnline) {
+
+        espStatus.textContent =
+          "ONLINE";
+
+        espStatus.style.color =
+          "#16a34a";
+
+      }
+      else {
+
+        espStatus.textContent =
+          "OFFLINE";
+
+        espStatus.style.color =
+          "#dc2626";
+
+      }
+
+    }
+
+
+    // ========================================
+    // Firebase Status
+    // ========================================
+
+    const firebaseStatus =
+      document.getElementById(
+        "firebaseStatus"
+      );
+
+
+    if (firebaseStatus) {
+
+      firebaseStatus.textContent =
         "ONLINE";
 
-      espStatus.style.color =
+      firebaseStatus.style.color =
         "#16a34a";
 
     }
-    else {
 
-      espStatus.textContent =
-        "OFFLINE";
 
-      espStatus.style.color =
-        "#dc2626";
+    // ========================================
+    // Connection Status
+    // ========================================
+
+    const connection =
+      document.getElementById(
+        "connectionStatus"
+      );
+
+
+    if (connection) {
+
+      connection.textContent =
+        "● ONLINE";
+
+      connection.className =
+        "connection online";
 
     }
 
 
-    // -------------------------------------------------
-    // Update Time
-    // -------------------------------------------------
+    // ========================================
+    // เวลา
+    // ========================================
 
     updateTime();
 
-  },
 
-  (error) => {
+  }
+  catch (error) {
 
     console.error(
-      "Firebase error:",
+      "Firebase Error:",
       error
     );
 
-    document.getElementById(
-      "firebaseStatus"
-    ).textContent =
-      "ERROR";
+
+    setOffline();
 
   }
 
-);
+}
 
 
-// =====================================================
-// Update Slot
-// =====================================================
+// ============================================
+// อัปเดตช่องจอด
+// ============================================
 
 function updateSlot(
   name,
@@ -307,7 +262,16 @@ function updateSlot(
     );
 
 
-  if (!card) return;
+  if (!card) {
+
+    console.error(
+      "ไม่พบช่อง:",
+      name
+    );
+
+    return;
+
+  }
 
 
   const status =
@@ -327,8 +291,12 @@ function updateSlot(
     );
 
 
-    status.textContent =
-      "🔴 มีรถ";
+    if (status) {
+
+      status.textContent =
+        "🔴 มีรถ";
+
+    }
 
   }
   else {
@@ -342,17 +310,86 @@ function updateSlot(
     );
 
 
-    status.textContent =
-      "🟢 ว่าง";
+    if (status) {
+
+      status.textContent =
+        "🟢 ว่าง";
+
+    }
 
   }
 
 }
 
 
-// =====================================================
-// เวลาอัปเดตหน้าเว็บ
-// =====================================================
+// ============================================
+// Offline
+// ============================================
+
+function setOffline() {
+
+  const connection =
+    document.getElementById(
+      "connectionStatus"
+    );
+
+
+  if (connection) {
+
+    connection.textContent =
+      "● OFFLINE";
+
+    connection.className =
+      "connection offline";
+
+  }
+
+
+  const firebaseStatus =
+    document.getElementById(
+      "firebaseStatus"
+    );
+
+
+  if (firebaseStatus) {
+
+    firebaseStatus.textContent =
+      "OFFLINE";
+
+    firebaseStatus.style.color =
+      "#dc2626";
+
+  }
+
+}
+
+
+// ============================================
+// อัปเดตข้อความ
+// ============================================
+
+function setText(
+  id,
+  value
+) {
+
+  const element =
+    document.getElementById(id);
+
+
+  if (element) {
+
+    element.textContent =
+      value;
+
+  }
+
+}
+
+
+// ============================================
+// เวลา
+// ============================================
 
 function updateTime() {
 
@@ -371,15 +408,15 @@ function updateTime() {
     );
 
 
-  document.getElementById(
-    "lastUpdate"
-  ).textContent =
-    "อัปเดตล่าสุด " + time;
+  setText(
+    "lastUpdate",
+    "อัปเดตล่าสุด " + time
+  );
 
 
-  document.getElementById(
-    "systemTime"
-  ).textContent =
-    time;
+  setText(
+    "systemTime",
+    time
+  );
 
 }
