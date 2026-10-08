@@ -1,0 +1,629 @@
+อัพเดทล่าสุด
+
+
+#include <ESP8266WiFi.h>
+#include <ESP8266WebServer.h>
+
+// =====================================================
+// WiFi
+// =====================================================
+
+const char* ssid = "S24FE";
+const char* password = "3.1415926";
+
+
+// =====================================================
+// กำหนด GPIO
+// =====================================================
+
+// D1 = GPIO5
+#define WIFI_LED 5
+
+// D2 = GPIO4
+#define IR_A1 4
+
+// D5 = GPIO14
+#define IR_A2 14
+
+// D6 = GPIO12
+#define IR_A3 12
+
+// D7 = GPIO13
+#define IR_A4 13
+
+// D0 = GPIO16
+#define OBJECT_LED 16
+
+
+// =====================================================
+// Web Server
+// =====================================================
+
+ESP8266WebServer server(80);
+
+
+// =====================================================
+// สถานะช่องจอด
+// =====================================================
+
+bool slotA1 = false;
+bool slotA2 = false;
+bool slotA3 = false;
+bool slotA4 = false;
+
+
+// =====================================================
+// อ่าน Sensor
+// =====================================================
+
+void readSensors() {
+
+  slotA1 = (digitalRead(IR_A1) == LOW);
+  slotA2 = (digitalRead(IR_A2) == LOW);
+  slotA3 = (digitalRead(IR_A3) == LOW);
+  slotA4 = (digitalRead(IR_A4) == LOW);
+
+
+  // ===================================================
+  // LED แสดงสถานะรวม
+  // ถ้ามีรถช่องใดช่องหนึ่ง → LED ติด
+  // ===================================================
+
+  if (slotA1 || slotA2 || slotA3 || slotA4) {
+
+    digitalWrite(OBJECT_LED, HIGH);
+
+  }
+  else {
+
+    digitalWrite(OBJECT_LED, LOW);
+
+  }
+
+
+  // ===================================================
+  // Serial แสดงเฉพาะตอนสถานะเปลี่ยน
+  // ===================================================
+
+  static bool oldA1 = false;
+  static bool oldA2 = false;
+  static bool oldA3 = false;
+  static bool oldA4 = false;
+
+
+  if (slotA1 != oldA1) {
+
+    if (slotA1)
+      Serial.println("🚗 A1 : มีรถ");
+    else
+      Serial.println("🟢 A1 : ว่าง");
+
+    oldA1 = slotA1;
+  }
+
+
+  if (slotA2 != oldA2) {
+
+    if (slotA2)
+      Serial.println("🚗 A2 : มีรถ");
+    else
+      Serial.println("🟢 A2 : ว่าง");
+
+    oldA2 = slotA2;
+  }
+
+
+  if (slotA3 != oldA3) {
+
+    if (slotA3)
+      Serial.println("🚗 A3 : มีรถ");
+    else
+      Serial.println("🟢 A3 : ว่าง");
+
+    oldA3 = slotA3;
+  }
+
+
+  if (slotA4 != oldA4) {
+
+    if (slotA4)
+      Serial.println("🚗 A4 : มีรถ");
+    else
+      Serial.println("🟢 A4 : ว่าง");
+
+    oldA4 = slotA4;
+  }
+}
+
+
+// =====================================================
+// สร้าง Card ช่องจอด
+// =====================================================
+
+String parkingCard(String name, bool occupied) {
+
+  String card = "";
+
+  card += "<div class='slot ";
+
+  if (occupied)
+    card += "occupied";
+  else
+    card += "free";
+
+  card += "'>";
+
+  card += "<div class='slot-name'>";
+  card += name;
+  card += "</div>";
+
+  if (occupied) {
+
+    card += "<div class='status'>";
+    card += "🔴 มีรถ";
+    card += "</div>";
+
+  }
+  else {
+
+    card += "<div class='status'>";
+    card += "🟢 ว่าง";
+    card += "</div>";
+
+  }
+
+  card += "</div>";
+
+  return card;
+}
+
+
+// =====================================================
+// Dashboard
+// =====================================================
+
+void handleRoot() {
+
+  int occupiedCount = 0;
+
+  if (slotA1) occupiedCount++;
+  if (slotA2) occupiedCount++;
+  if (slotA3) occupiedCount++;
+  if (slotA4) occupiedCount++;
+
+  int freeCount = 4 - occupiedCount;
+
+
+  String html = "";
+
+  html.reserve(8000);
+
+
+  // ===================================================
+  // HTML
+  // ===================================================
+
+  html += "<!DOCTYPE html>";
+  html += "<html lang='th'>";
+
+  html += "<head>";
+
+  html += "<meta charset='UTF-8'>";
+
+  html += "<meta name='viewport' ";
+  html += "content='width=device-width, initial-scale=1.0'>";
+
+  // อัปเดตทุก 1 วินาที
+  html += "<meta http-equiv='refresh' content='1'>";
+
+  html += "<title>IoT Parking</title>";
+
+
+  // ===================================================
+  // CSS
+  // ===================================================
+
+  html += "<style>";
+
+  html += "*{box-sizing:border-box;}";
+
+  html += "body{";
+  html += "margin:0;";
+  html += "font-family:Arial,Tahoma,sans-serif;";
+  html += "background:#eef2f7;";
+  html += "}";
+
+  html += ".header{";
+  html += "background:#17202a;";
+  html += "color:white;";
+  html += "text-align:center;";
+  html += "padding:25px;";
+  html += "}";
+
+  html += ".header h1{";
+  html += "margin:0;";
+  html += "font-size:30px;";
+  html += "}";
+
+  html += ".container{";
+  html += "max-width:1000px;";
+  html += "margin:auto;";
+  html += "padding:20px;";
+  html += "}";
+
+  html += ".summary{";
+  html += "display:grid;";
+  html += "grid-template-columns:1fr 1fr;";
+  html += "gap:15px;";
+  html += "margin-bottom:20px;";
+  html += "}";
+
+  html += ".summary-card{";
+  html += "background:white;";
+  html += "border-radius:15px;";
+  html += "padding:20px;";
+  html += "text-align:center;";
+  html += "box-shadow:0 3px 10px rgba(0,0,0,0.1);";
+  html += "}";
+
+  html += ".number{";
+  html += "font-size:40px;";
+  html += "font-weight:bold;";
+  html += "}";
+
+  html += ".parking-grid{";
+  html += "display:grid;";
+  html += "grid-template-columns:1fr 1fr;";
+  html += "gap:20px;";
+  html += "}";
+
+  html += ".slot{";
+  html += "padding:30px 15px;";
+  html += "border-radius:20px;";
+  html += "text-align:center;";
+  html += "box-shadow:0 4px 12px rgba(0,0,0,0.1);";
+  html += "}";
+
+  html += ".free{";
+  html += "background:#d5f5e3;";
+  html += "border:3px solid #2ecc71;";
+  html += "}";
+
+  html += ".occupied{";
+  html += "background:#fadbd8;";
+  html += "border:3px solid #e74c3c;";
+  html += "}";
+
+  html += ".slot-name{";
+  html += "font-size:42px;";
+  html += "font-weight:bold;";
+  html += "margin-bottom:15px;";
+  html += "}";
+
+  html += ".status{";
+  html += "font-size:24px;";
+  html += "font-weight:bold;";
+  html += "}";
+
+  html += ".info{";
+  html += "background:white;";
+  html += "border-radius:15px;";
+  html += "padding:20px;";
+  html += "margin-top:20px;";
+  html += "text-align:center;";
+  html += "}";
+
+  html += ".footer{";
+  html += "text-align:center;";
+  html += "margin-top:20px;";
+  html += "color:#777;";
+  html += "}";
+
+  html += "@media(max-width:600px){";
+
+  html += ".parking-grid{";
+  html += "grid-template-columns:1fr;";
+  html += "}";
+
+  html += "}";
+
+  html += "</style>";
+
+  html += "</head>";
+
+
+  // ===================================================
+  // BODY
+  // ===================================================
+
+  html += "<body>";
+
+
+  // Header
+
+  html += "<div class='header'>";
+
+  html += "<h1>🚗 IoT PARKING</h1>";
+
+  html += "<p>ระบบลานจอดรถอัจฉริยะ</p>";
+
+  html += "</div>";
+
+
+  html += "<div class='container'>";
+
+
+  // ===================================================
+  // Summary
+  // ===================================================
+
+  html += "<div class='summary'>";
+
+  html += "<div class='summary-card'>";
+
+  html += "<div>🟢 ช่องว่าง</div>";
+
+  html += "<div class='number'>";
+  html += freeCount;
+  html += "</div>";
+
+  html += "<div>จาก 4 ช่อง</div>";
+
+  html += "</div>";
+
+
+  html += "<div class='summary-card'>";
+
+  html += "<div>🔴 มีรถ</div>";
+
+  html += "<div class='number'>";
+  html += occupiedCount;
+  html += "</div>";
+
+  html += "<div>จาก 4 ช่อง</div>";
+
+  html += "</div>";
+
+  html += "</div>";
+
+
+  // ===================================================
+  // ช่อง A1-A4
+  // ===================================================
+
+  html += "<div class='parking-grid'>";
+
+  html += parkingCard("A1", slotA1);
+
+  html += parkingCard("A2", slotA2);
+
+  html += parkingCard("A3", slotA3);
+
+  html += parkingCard("A4", slotA4);
+
+  html += "</div>";
+
+
+  // ===================================================
+  // Information
+  // ===================================================
+
+  html += "<div class='info'>";
+
+  html += "<h3>📡 สถานะระบบ</h3>";
+
+  html += "<p>Wi-Fi : 🟢 เชื่อมต่อแล้ว</p>";
+
+  html += "<p>IP Address : ";
+
+  html += WiFi.localIP().toString();
+
+  html += "</p>";
+
+  html += "<p>Signal : ";
+
+  html += String(WiFi.RSSI());
+
+  html += " dBm</p>";
+
+  html += "</div>";
+
+
+  html += "<div class='footer'>";
+
+  html += "ESP8266 IoT Parking System<br>";
+  html += "ข้อมูลอัปเดตทุก 1 วินาที";
+
+  html += "</div>";
+
+
+  html += "</div>";
+
+  html += "</body>";
+
+  html += "</html>";
+
+
+  server.send(
+    200,
+    "text/html; charset=UTF-8",
+    html
+  );
+}
+
+
+// =====================================================
+// เชื่อมต่อ WiFi
+// =====================================================
+
+bool connectWiFi() {
+
+  Serial.println();
+  Serial.println("กำลังเชื่อมต่อ WiFi...");
+
+  WiFi.mode(WIFI_STA);
+
+  WiFi.begin(ssid, password);
+
+
+  unsigned long startTime = millis();
+
+
+  while (
+    WiFi.status() != WL_CONNECTED &&
+    millis() - startTime < 20000
+  ) {
+
+    digitalWrite(WIFI_LED, !digitalRead(WIFI_LED));
+
+    Serial.print(".");
+
+    delay(500);
+
+    yield();
+  }
+
+
+  if (WiFi.status() == WL_CONNECTED) {
+
+    digitalWrite(WIFI_LED, HIGH);
+
+    Serial.println();
+    Serial.println("================================");
+    Serial.println("✅ WiFi เชื่อมต่อสำเร็จ");
+    Serial.println("================================");
+
+    Serial.print("IP Address: ");
+    Serial.println(WiFi.localIP());
+
+    Serial.print("Signal: ");
+    Serial.print(WiFi.RSSI());
+    Serial.println(" dBm");
+
+    return true;
+  }
+
+
+  digitalWrite(WIFI_LED, LOW);
+
+  Serial.println();
+  Serial.println("❌ WiFi เชื่อมต่อไม่สำเร็จ");
+
+  return false;
+}
+
+
+// =====================================================
+// SETUP
+// =====================================================
+
+void setup() {
+
+  Serial.begin(115200);
+
+  delay(500);
+
+
+  Serial.println();
+  Serial.println("================================");
+  Serial.println("     IoT PARKING SYSTEM");
+  Serial.println("================================");
+
+
+  // ===================================================
+  // Pin Mode
+  // ===================================================
+
+  pinMode(WIFI_LED, OUTPUT);
+
+  pinMode(IR_A1, INPUT);
+
+  pinMode(IR_A2, INPUT);
+
+  pinMode(IR_A3, INPUT);
+
+  pinMode(IR_A4, INPUT);
+
+  pinMode(OBJECT_LED, OUTPUT);
+
+
+  digitalWrite(WIFI_LED, LOW);
+
+  digitalWrite(OBJECT_LED, LOW);
+
+
+  // ===================================================
+  // WiFi
+  // ===================================================
+
+  connectWiFi();
+
+
+  // ===================================================
+  // Web Server
+  // ===================================================
+
+  server.on("/", handleRoot);
+
+  server.begin();
+
+
+  Serial.println();
+  Serial.println("================================");
+  Serial.println("Web Server STARTED");
+
+  if (WiFi.status() == WL_CONNECTED) {
+
+    Serial.print("เปิดเว็บ: http://");
+    Serial.println(WiFi.localIP());
+
+  }
+
+  Serial.println("================================");
+}
+
+
+// =====================================================
+// LOOP
+// =====================================================
+
+void loop() {
+
+  // Web Server
+  server.handleClient();
+
+
+  // อ่าน IR
+  readSensors();
+
+
+  // ===================================================
+  // ตรวจ WiFi ทุก 5 วินาที
+  // ===================================================
+
+  static unsigned long lastWiFiCheck = 0;
+
+
+  if (millis() - lastWiFiCheck >= 5000) {
+
+    lastWiFiCheck = millis();
+
+
+    if (WiFi.status() != WL_CONNECTED) {
+
+      Serial.println();
+      Serial.println("⚠️ WiFi หลุด");
+
+      connectWiFi();
+
+    }
+    else {
+
+      digitalWrite(WIFI_LED, HIGH);
+
+    }
+  }
+
+
+  yield();
+}
