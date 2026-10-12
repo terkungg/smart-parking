@@ -29,9 +29,11 @@ body {
 
   color: white;
 
-  padding: 24px;
+  padding: clamp(16px, 3vw, 24px);
+  padding-top: max(clamp(16px, 3vw, 24px), env(safe-area-inset-top));
 
   display: flex;
+  flex-wrap: wrap;
 
   justify-content: space-between;
 
@@ -45,7 +47,7 @@ body {
 
   margin: 0;
 
-  font-size: 30px;
+  font-size: clamp(22px, 5vw, 30px);
 }
 
 
@@ -95,7 +97,9 @@ body {
 
   margin: auto;
 
-  padding: 25px;
+  padding: clamp(14px, 3vw, 25px);
+  padding-left: max(clamp(14px, 3vw, 25px), env(safe-area-inset-left));
+  padding-right: max(clamp(14px, 3vw, 25px), env(safe-area-inset-right));
 }
 
 
@@ -188,6 +192,9 @@ body {
   align-items:
     flex-end;
 
+  flex-wrap: wrap;
+  gap: 6px 12px;
+
   margin-bottom: 15px;
 }
 
@@ -209,147 +216,6 @@ body {
 
 
 .last-update {
-
-  color: #64748b;
-
-  font-size: 13px;
-}
-
-
-/* =========================
-   Parking
-========================= */
-
-.parking-grid {
-
-  display: grid;
-
-  grid-template-columns:
-    repeat(2, 1fr);
-
-  gap: 22px;
-}
-
-
-.parking-slot {
-
-  background: white;
-
-  border-radius: 22px;
-
-  padding: 25px;
-
-  text-align: center;
-
-  border: 3px solid #cbd5e1;
-
-  box-shadow:
-    0 6px 20px
-    rgba(0, 0, 0, 0.07);
-
-  transition:
-    0.2s ease;
-}
-
-
-.parking-slot.free {
-
-  border-color: #22c55e;
-
-  background: #f0fdf4;
-}
-
-
-.parking-slot.occupied {
-
-  border-color: #ef4444;
-
-  background: #fef2f2;
-}
-
-
-.slot-header {
-
-  display: flex;
-
-  justify-content:
-    space-between;
-
-  align-items: center;
-}
-
-
-.slot-name {
-
-  font-size: 32px;
-
-  font-weight: bold;
-}
-
-
-.slot-dot {
-
-  width: 15px;
-
-  height: 15px;
-
-  border-radius: 50%;
-
-  background: #94a3b8;
-}
-
-
-.free .slot-dot {
-
-  background: #22c55e;
-
-  box-shadow:
-    0 0 10px
-    rgba(34, 197, 94, 0.6);
-}
-
-
-.occupied .slot-dot {
-
-  background: #ef4444;
-
-  box-shadow:
-    0 0 10px
-    rgba(239, 68, 68, 0.6);
-}
-
-
-.car-icon {
-
-  font-size: 60px;
-
-  margin: 20px 0 10px;
-}
-
-
-.slot-status {
-
-  font-size: 24px;
-
-  font-weight: bold;
-}
-
-
-.free .slot-status {
-
-  color: #15803d;
-}
-
-
-.occupied .slot-status {
-
-  color: #b91c1c;
-}
-
-
-.sensor-status {
-
-  margin-top: 10px;
 
   color: #64748b;
 
@@ -439,43 +305,369 @@ footer {
 
 
 /* =========================
-   Mobile
+   ผังลานจอดรถ
 ========================= */
 
-@media (max-width: 700px) {
+.lot {
+  --asphalt: #3b4351;
+  --asphalt-dark: #2f3643;
+  --line: #f8fafc;
 
-  .header {
+  display: grid;
+  grid-template-columns: 110px 1fr 110px;
+  grid-template-areas:
+    ".      bays  ."
+    "gin    lane  gout";
+  background:
+    repeating-linear-gradient(45deg, rgba(255,255,255,.015) 0 6px, transparent 6px 12px),
+    var(--asphalt);
+  border: 6px solid #94a3b8;
+  border-radius: 22px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, .25);
+  overflow: hidden;
+  position: relative;
+}
 
+.lot.is-offline .bays,
+.lot.is-offline .lane { opacity: .55; filter: grayscale(.6); }
+
+.bays {
+  grid-area: bays;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  padding: 22px 8px 0;
+}
+
+/* ---- ช่องจอด ---- */
+.parking-slot {
+  position: relative;
+  height: clamp(170px, 24vw, 230px);
+  margin: 0 -1.5px;
+  padding: 10px 6px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: #fff;
+  text-align: center;
+  border: 3px solid var(--line);
+  border-bottom: 0;
+  background: rgba(255, 255, 255, .04);
+  transition: background .3s ease;
+}
+
+.parking-slot.free     { background: rgba(34, 197, 94, .22); }
+.parking-slot.occupied { background: rgba(239, 68, 68, .22); }
+
+/* ลูกศรชี้จากทางวิ่งเข้าช่อง (เฉพาะช่องว่าง) */
+.parking-slot::after {
+  content: "▲";
+  position: absolute;
+  bottom: -26px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 16px;
+  color: #4ade80;
+  opacity: 0;
+  z-index: 2;
+}
+.parking-slot.free::after { opacity: 1; animation: blink 1.2s ease-in-out infinite; }
+
+.slot-header {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 4px;
+}
+
+.slot-name {
+  font-size: 22px;
+  font-weight: bold;
+  letter-spacing: 1px;
+}
+
+.slot-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #94a3b8;
+}
+.free .slot-dot     { background: #22c55e; box-shadow: 0 0 10px rgba(34,197,94,.9); }
+.occupied .slot-dot { background: #ef4444; box-shadow: 0 0 10px rgba(239,68,68,.9); }
+
+/* รถ: เห็นเฉพาะตอนมีรถ, วิ่งเข้าช่อง */
+.car {
+  width: 54%;
+  max-width: 78px;
+  height: auto;
+  aspect-ratio: 60 / 110;
+  margin-top: auto;
+  color: var(--car, #3b82f6);
+  filter: drop-shadow(0 6px 5px rgba(0, 0, 0, .45));
+  opacity: 0;
+  transform: translateY(70px);
+  transition: opacity .5s ease, transform .6s cubic-bezier(.2,.8,.2,1);
+}
+.occupied .car { opacity: 1; transform: translateY(0); }
+
+.slot-status {
+  margin-top: 8px;
+  font-size: 15px;
+  font-weight: bold;
+  line-height: 1.25;
+}
+.free .slot-status     { color: #86efac; }
+.occupied .slot-status { color: #fca5a5; }
+
+.sensor-status {
+  margin-top: 3px;
+  font-size: 11px;
+  color: #cbd5e1;
+  opacity: .8;
+}
+
+/* ---- ทางวิ่ง ---- */
+.lane {
+  grid-area: lane;
+  position: relative;
+  height: 110px;
+  margin-top: 30px;
+  background: var(--asphalt-dark);
+  border-top: 3px dashed rgba(255,255,255,.35);
+  overflow: hidden;
+}
+
+/* เส้นกลางถนน */
+.lane::before {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; top: 50%;
+  border-top: 3px dashed #facc15;
+  opacity: .8;
+}
+
+/* ลูกศรทิศทาง ซ้าย → ขวา เคลื่อนไหว */
+.lane-arrows {
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='70' height='30' viewBox='0 0 70 30'><path d='M22 5 L38 15 L22 25' fill='none' stroke='white' stroke-width='5' stroke-linecap='round' stroke-linejoin='round' opacity='.55'/></svg>");
+  background-repeat: repeat-x;
+  background-position: 0 78%;
+  animation: flow 1.4s linear infinite;
+}
+
+/* รถวิ่งผ่านทางวิ่ง (เฉพาะตอนมีช่องว่าง) */
+.moving-car {
+  position: absolute;
+  left: 0;
+  top: 12px;
+  width: 26px;
+  height: 48px;
+  color: #e2e8f0;
+  transform: rotate(90deg) translateY(0);
+  transform-origin: center;
+  opacity: 0;
+}
+.lot.has-free:not(.is-offline) .moving-car {
+  animation: drive 7s linear infinite;
+}
+
+/* ---- ประตู เข้า/ออก ---- */
+.gate {
+  position: relative;
+  margin-top: 30px;
+  height: 110px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: #fff;
+  background: #1f2937;
+  z-index: 2;
+}
+.gate-in  { padding-right: 18px; }
+.gate-out { padding-left: 18px; }
+.gate-in  { grid-area: gin;  border-right: 4px solid #facc15; }
+.gate-out { grid-area: gout; border-left: 4px solid #facc15; }
+
+.gate-label {
+  font-weight: bold;
+  font-size: 15px;
+  text-align: center;
+  line-height: 1.2;
+}
+.gate-label small {
+  display: block;
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  color: #94a3b8;
+}
+
+.gate-sign {
+  min-width: 64px;
+  padding: 3px 10px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: bold;
+  text-align: center;
+  background: #14532d;
+  color: #86efac;
+}
+.lot.full .gate-sign       { background: #7f1d1d; color: #fecaca; }
+.lot.is-offline .gate-sign { background: #374151; color: #9ca3af; }
+
+/* ไม้กั้น: ปิด = แท่งตั้งขวางทาง, เปิด = หดเป็นตอสั้น */
+.barrier {
+  position: absolute;
+  bottom: 8px;
+  width: 8px;
+  height: 74px;
+  border-radius: 4px;
+  background: repeating-linear-gradient(0deg, #ef4444 0 10px, #fff 10px 20px);
+  transform-origin: bottom center;
+  transition: transform .5s ease;
+}
+.gate-in  .barrier { right: 8px; transform: scaleY(.15); }  /* เปิด (มีที่ว่าง) */
+.gate-out .barrier { left: 8px;  transform: scaleY(.15); }  /* ทางออกเปิดเสมอ */
+.lot.full .gate-in .barrier,
+.lot.is-offline .gate-in .barrier { transform: scaleY(1); }  /* ปิด */
+
+/* ---- คำอธิบาย ---- */
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 22px;
+  justify-content: center;
+  margin-top: 14px;
+  color: #475569;
+  font-size: 14px;
+}
+.legend .lg {
+  display: inline-block;
+  width: 14px; height: 14px;
+  border-radius: 4px;
+  vertical-align: -2px;
+  margin-right: 4px;
+}
+.legend .lg.free { background: #22c55e; }
+.legend .lg.occ  { background: #ef4444; }
+.legend .lg.arrow {
+  width: auto; height: auto;
+  background: none;
+  color: #475569;
+  font-style: normal;
+}
+
+/* ---- Animation ---- */
+@keyframes flow  { to { background-position-x: 70px; } }
+@keyframes blink { 50% { opacity: .25; } }
+@keyframes drive {
+  0%   { left: -40px; opacity: 0; }
+  8%   { opacity: 1; }
+  92%  { opacity: 1; }
+  100% { left: 100%;  opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lane-arrows, .moving-car, .parking-slot::after { animation: none !important; }
+}
+
+
+/* =========================
+   Responsive
+   - ใหญ่ (คอม)  : > 900px
+   - แท็บเล็ต    : 601–900px
+   - มือถือ      : <= 600px
+   - มือถือเล็ก  : <= 380px
+   - มือถือแนวนอน: ความสูงน้อย
+========================= */
+
+html { -webkit-text-size-adjust: 100%; }
+body { min-width: 320px; overflow-x: hidden; }
+
+/* แท็บเล็ต */
+@media (max-width: 900px) {
+  .lot { grid-template-columns: 90px 1fr 90px; }
+  .system-grid { grid-template-columns: repeat(2, 1fr); }
+  .summary-card { padding: 18px; }
+}
+
+/* มือถือ */
+@media (max-width: 600px) {
+
+  .header { flex-direction: row; align-items: center; }
+  .header h1 { font-size: 22px; }
+  .header p  { font-size: 13px; margin-top: 2px; }
+  .connection { padding: 7px 12px; font-size: 12px; }
+
+  /* การ์ดสรุป 3 ใบเรียงแถวเดียว (กะทัดรัด) */
+  .summary { gap: 10px; margin-bottom: 22px; }
+  .summary-card {
     flex-direction: column;
-
-    align-items: flex-start;
+    text-align: center;
+    gap: 4px;
+    padding: 12px 6px;
+    border-radius: 14px;
+    border-left: 0;
+    border-top: 4px solid #cbd5e1;
   }
+  .free-summary     { border-top-color: #22c55e; }
+  .occupied-summary { border-top-color: #ef4444; }
+  .summary-icon   { font-size: 26px; }
+  .summary-title  { font-size: 12px; }
+  .summary-number { font-size: 26px; margin-top: 0; }
 
+  .section-title h2 { font-size: 20px; }
 
-  .summary {
-
-    grid-template-columns:
-      1fr;
+  /* ผังลานจอด */
+  .lot {
+    grid-template-columns: 74px 1fr 74px;
+    grid-template-areas:
+      "bays bays bays"
+      "gin  lane gout";
+    border-width: 4px;
+    border-radius: 18px;
   }
+  .bays { padding: 14px 6px 0; }
+  .parking-slot { height: 170px; padding: 8px 2px 10px; border-width: 2px; }
+  .slot-name { font-size: 16px; letter-spacing: 0; }
+  .slot-dot { width: 9px; height: 9px; }
+  .slot-status { font-size: 12px; }
+  .sensor-status { display: none; }
 
+  .lane, .gate { height: 90px; margin-top: 26px; }
+  .gate-in  { padding-right: 14px; }
+  .gate-out { padding-left: 14px; }
+  .barrier { height: 60px; }
+  .gate-label { font-size: 12px; }
+  .gate-label small { display: none; }
+  .gate-sign { min-width: 0; padding: 2px 6px; font-size: 11px; }
 
-  .parking-grid {
+  .system-card { padding: 18px; border-radius: 16px; }
+  .system-grid { gap: 10px; }
+  .system-grid div { padding: 12px; }
+  .legend { font-size: 13px; }
+}
 
-    grid-template-columns:
-      1fr;
-  }
+/* มือถือเล็ก (เช่น 320–380px) */
+@media (max-width: 380px) {
+  .lot { grid-template-columns: 62px 1fr 62px; }
+  .parking-slot { height: 150px; }
+  .slot-status { font-size: 11px; }
+  .gate-label { font-size: 11px; }
+  .summary-number { font-size: 22px; }
+  .connection { font-size: 11px; padding: 6px 10px; }
+}
 
+/* มือถือแนวนอน / หน้าจอเตี้ย */
+@media (max-height: 480px) and (orientation: landscape) {
+  .parking-slot { height: 150px; }
+  .lane, .gate { height: 80px; }
+}
 
-  .system-grid {
-
-    grid-template-columns:
-      1fr 1fr;
-  }
-
-
-  .container {
-
-    padding: 15px;
-  }
-
+/* หน้าจอใหญ่มาก */
+@media (min-width: 1400px) {
+  .container { max-width: 1250px; }
+  .parking-slot { height: 250px; }
 }

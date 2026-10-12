@@ -89,6 +89,8 @@ async function loadParkingData() {
       espOnline = espOnline && isHeartbeatActive;
     }
 
+    updateGate(free, espOnline);
+
     const espStatus = document.getElementById("espStatus");
     if (espStatus) {
       if (espOnline) {
@@ -161,10 +163,35 @@ function updateSlot(name, occupied) {
 
 
 // ============================================
+// ป้ายทางเข้า + สถานะผังลานจอด
+// ============================================
+
+function updateGate(free, online) {
+  const lot = document.getElementById("lot");
+  const sign = document.getElementById("gateSign");
+  if (!lot || !sign) return;
+
+  lot.classList.toggle("is-offline", !online);
+  lot.classList.toggle("full", online && free <= 0);
+  lot.classList.toggle("has-free", online && free > 0);
+
+  if (!online) {
+    sign.textContent = "OFFLINE";
+  } else if (free <= 0) {
+    sign.textContent = "เต็ม";
+  } else {
+    sign.textContent = "ว่าง " + free;
+  }
+}
+
+
+// ============================================
 // จัดการสถานะเมื่อเชื่อมต่อไม่ได้ (Offline)
 // ============================================
 
 function setOffline() {
+  updateGate(0, false);
+
   const connection = document.getElementById("connectionStatus");
   if (connection) {
     connection.textContent = "● OFFLINE";

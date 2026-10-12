@@ -1,143 +1,148 @@
 <!DOCTYPE html>
 <html lang="th">
-
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#0f172a">
-  <title>Smart Parking IoT</title>
-  <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0f172a">
+<title>Smart Parking IoT</title>
+<link rel="stylesheet" href="style.css">
 </head>
-
 <body>
 
-  <header class="header">
-    <div>
-      <h1>🚗 Smart Parking</h1>
-      <p>ระบบลานจอดรถอัจฉริยะ IoT</p>
+<!-- รถมองจากด้านบน (ใช้ซ้ำทุกช่อง) -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="car" viewBox="0 0 60 110">
+    <rect x="2" y="16" width="9" height="20" rx="3" fill="#111"/>
+    <rect x="49" y="16" width="9" height="20" rx="3" fill="#111"/>
+    <rect x="2" y="74" width="9" height="20" rx="3" fill="#111"/>
+    <rect x="49" y="74" width="9" height="20" rx="3" fill="#111"/>
+    <rect x="6" y="4" width="48" height="102" rx="16" fill="currentColor"/>
+    <path d="M13 30 Q30 22 47 30 L44 46 H16 Z" fill="#cfe8ff" opacity=".92"/>
+    <rect x="15" y="46" width="30" height="26" rx="6" fill="#000" opacity=".12"/>
+    <path d="M16 74 H44 L47 87 Q30 92 13 87 Z" fill="#cfe8ff" opacity=".8"/>
+    <rect x="11" y="6" width="9" height="5" rx="2" fill="#fde68a"/>
+    <rect x="40" y="6" width="9" height="5" rx="2" fill="#fde68a"/>
+    <rect x="11" y="99" width="9" height="4" rx="2" fill="#fb7185"/>
+    <rect x="40" y="99" width="9" height="4" rx="2" fill="#fb7185"/>
+  </symbol>
+</svg>
+
+<header class="header">
+  <div>
+    <h1>🚗 Smart Parking</h1>
+    <p>ระบบลานจอดรถอัจฉริยะ IoT</p>
+  </div>
+  <div id="connectionStatus" class="connection offline">● OFFLINE</div>
+</header>
+
+<main class="container">
+
+  <!-- สรุป -->
+  <section class="summary">
+    <div class="summary-card">
+      <div class="summary-icon">🅿️</div>
+      <div>
+        <div class="summary-title">ช่องทั้งหมด</div>
+        <div id="totalSlots" class="summary-number">4</div>
+      </div>
+    </div>
+    <div class="summary-card free-summary">
+      <div class="summary-icon">🟢</div>
+      <div>
+        <div class="summary-title">ช่องว่าง</div>
+        <div id="freeSlots" class="summary-number">-</div>
+      </div>
+    </div>
+    <div class="summary-card occupied-summary">
+      <div class="summary-icon">🔴</div>
+      <div>
+        <div class="summary-title">มีรถ</div>
+        <div id="occupiedSlots" class="summary-number">-</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ผังลานจอดรถ -->
+  <section>
+    <div class="section-title">
+      <div>
+        <h2>ผังลานจอดรถ</h2>
+        <p>สถานะแบบ Real-time</p>
+      </div>
+      <div id="lastUpdate" class="last-update">รอข้อมูล...</div>
     </div>
 
-    <div id="connectionStatus" class="connection offline">
-      ● OFFLINE
-    </div>
-  </header>
+    <div id="lot" class="lot is-offline">
 
-  <main class="container">
-
-    <!-- Summary Section -->
-    <section class="summary">
-      <div class="summary-card">
-        <div class="summary-icon">🅿️</div>
-        <div>
-          <div class="summary-title">ช่องทั้งหมด</div>
-          <div id="totalSlots" class="summary-number">4</div>
-        </div>
-      </div>
-
-      <div class="summary-card free-summary">
-        <div class="summary-icon">🟢</div>
-        <div>
-          <div class="summary-title">ช่องว่าง</div>
-          <div id="freeSlots" class="summary-number">-</div>
-        </div>
-      </div>
-
-      <div class="summary-card occupied-summary">
-        <div class="summary-icon">🔴</div>
-        <div>
-          <div class="summary-title">มีรถ</div>
-          <div id="occupiedSlots" class="summary-number">-</div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Parking Slots Section -->
-    <section>
-      <div class="section-title">
-        <div>
-          <h2>ช่องจอดรถ</h2>
-          <p>สถานะแบบ Real-time</p>
-        </div>
-        <div id="lastUpdate" class="last-update">รอข้อมูล...</div>
-      </div>
-
-      <div class="parking-grid">
-        <!-- Slot A1 -->
-        <div id="slot-A1" class="parking-slot">
-          <div class="slot-header">
-            <span class="slot-name">A1</span>
-            <span class="slot-dot"></span>
-          </div>
-          <div class="car-icon">🚗</div>
+      <!-- แถวช่องจอด -->
+      <div class="bays">
+        <div id="slot-A1" class="parking-slot" style="--car:#3b82f6">
+          <div class="slot-header"><span class="slot-name">A1</span><span class="slot-dot"></span></div>
+          <svg class="car" aria-hidden="true"><use href="#car"/></svg>
           <div class="slot-status">กำลังโหลด...</div>
           <div class="sensor-status">IR Sensor A1</div>
         </div>
-
-        <!-- Slot A2 -->
-        <div id="slot-A2" class="parking-slot">
-          <div class="slot-header">
-            <span class="slot-name">A2</span>
-            <span class="slot-dot"></span>
-          </div>
-          <div class="car-icon">🚗</div>
+        <div id="slot-A2" class="parking-slot" style="--car:#f59e0b">
+          <div class="slot-header"><span class="slot-name">A2</span><span class="slot-dot"></span></div>
+          <svg class="car" aria-hidden="true"><use href="#car"/></svg>
           <div class="slot-status">กำลังโหลด...</div>
           <div class="sensor-status">IR Sensor A2</div>
         </div>
-
-        <!-- Slot A3 -->
-        <div id="slot-A3" class="parking-slot">
-          <div class="slot-header">
-            <span class="slot-name">A3</span>
-            <span class="slot-dot"></span>
-          </div>
-          <div class="car-icon">🚗</div>
+        <div id="slot-A3" class="parking-slot" style="--car:#8b5cf6">
+          <div class="slot-header"><span class="slot-name">A3</span><span class="slot-dot"></span></div>
+          <svg class="car" aria-hidden="true"><use href="#car"/></svg>
           <div class="slot-status">กำลังโหลด...</div>
           <div class="sensor-status">IR Sensor A3</div>
         </div>
-
-        <!-- Slot A4 -->
-        <div id="slot-A4" class="parking-slot">
-          <div class="slot-header">
-            <span class="slot-name">A4</span>
-            <span class="slot-dot"></span>
-          </div>
-          <div class="car-icon">🚗</div>
+        <div id="slot-A4" class="parking-slot" style="--car:#14b8a6">
+          <div class="slot-header"><span class="slot-name">A4</span><span class="slot-dot"></span></div>
+          <svg class="car" aria-hidden="true"><use href="#car"/></svg>
           <div class="slot-status">กำลังโหลด...</div>
           <div class="sensor-status">IR Sensor A4</div>
         </div>
       </div>
-    </section>
 
-    <!-- System Status Section -->
-    <section class="system-card">
-      <h2>📡 สถานะระบบ</h2>
-      <div class="system-grid">
-        <div>
-          <span>ESP8266</span>
-          <strong id="espStatus">-</strong>
-        </div>
-        <div>
-          <span>Firebase</span>
-          <strong id="firebaseStatus">-</strong>
-        </div>
-        <div>
-          <span>จำนวนช่อง</span>
-          <strong id="systemTotal">4</strong>
-        </div>
-        <div>
-          <span>อัปเดตล่าสุด</span>
-          <strong id="systemTime">-</strong>
-        </div>
+      <!-- ทางเข้า / ทางวิ่ง / ทางออก -->
+      <div class="gate gate-in">
+        <div class="gate-label">ทางเข้า<small>ENTRANCE</small></div>
+        <div id="gateSign" class="gate-sign">-</div>
+        <div class="barrier"></div>
       </div>
-    </section>
 
-    <footer>
-      <p>Smart Parking IoT • ESP8266 + Firebase</p>
-    </footer>
+      <div class="lane" aria-label="ทางวิ่งรถ">
+        <div class="lane-arrows"></div>
+        <svg class="moving-car" aria-hidden="true"><use href="#car"/></svg>
+      </div>
 
-  </main>
+      <div class="gate gate-out">
+        <div class="gate-label">ทางออก<small>EXIT</small></div>
+        <div class="barrier"></div>
+      </div>
+    </div>
 
-  <script src="app.js"></script>
+    <div class="legend">
+      <span><i class="lg free"></i> ว่าง</span>
+      <span><i class="lg occ"></i> มีรถ</span>
+      <span><i class="lg arrow">➜</i> ทิศทางรถวิ่ง</span>
+    </div>
+  </section>
+
+  <!-- สถานะระบบ -->
+  <section class="system-card">
+    <h2>📡 สถานะระบบ</h2>
+    <div class="system-grid">
+      <div><span>ESP8266</span><strong id="espStatus">-</strong></div>
+      <div><span>Firebase</span><strong id="firebaseStatus">-</strong></div>
+      <div><span>จำนวนช่อง</span><strong id="systemTotal">4</strong></div>
+      <div><span>อัปเดตล่าสุด</span><strong id="systemTime">-</strong></div>
+    </div>
+  </section>
+
+  <footer>
+    <p>Smart Parking IoT • ESP8266 + Firebase</p>
+  </footer>
+</main>
+
+<script src="app.js"></script>
 </body>
-
 </html>
